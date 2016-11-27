@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>simply-lazy</title>
+<style>
+* {margin: 0; padding: 0;}
+
+.demo {
+  margin: 30px;
+  padding: 30px;
+  font: 14px/1.5 consolas, monospace;
+  border: 1px solid #d5d5d5;
+  border-radius: 5px;
+  color: #333;
+  background: #fafafa;
+}
+.demo pre,
+.demo code {
+  font: inherit;
+}
+.demo pre:before {
+  content: '// code:';
+  display: block;
+  color: #999;
+}
+.demo .output {
+  /*border-top: 1px dashed #d5d5d5;*/
+}
+.demo .output:before {
+  content: '// output:';
+  display: block;
+  margin: 1.5em 0;
+  color: #999;
+}
+</style>
+</head>
+<body>
+
+<div class="demo">
+<pre>
+<code>
+Lazy([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  .filter(i => i % 2 === 0)
+  .map(i => i * 2)
+  .take(2)
+  .each(i => console.log(i))
+</code>
+</pre>
+<div class="output" id="demo1-output"></div>
+</div>
+
+<script src="index.js"></script>
+<script>
+function outputTo(el) {
+  el = document.querySelector(el)
+  return (msg) => {
+    var p = document.createElement('p')
+    p.textContent = msg
+    el.appendChild(p)
+  }
+}
+/* demo-1 */
+Lazy([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  .filter(i => i % 2 === 0)
+  .map(i => i * 2)
+  .take(2)
+  .each(outputTo('#demo1-output'))
+</script>
+</body>
+</html>

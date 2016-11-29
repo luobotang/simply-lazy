@@ -19,31 +19,6 @@
 
   function Sequence() { }
 
-  //Sequence.prototype.getIterator = function () {
-  //  var seq = this
-  //  var index = -1
-  //  var cachedIndex
-  //  return {
-  //    current() { return cachedIndex && cachedIndex.get(index) },
-  //    moveNext() {
-  //      if (!cachedIndex) {
-  //        cachedIndex = seq.getIndex()
-  //      }
-  //      if (index > cachedIndex.length() - 1) {
-  //        return false
-  //      } else {
-  //        ++index
-  //        return true
-  //      }
-  //    }
-  //  };
-  //}
-
-  //Sequence.prototype.getIndex = function () {
-  //  // TODO
-  //  return ArrayWrapper(this.toArray())
-  //}
-
   Sequence.prototype.get = function get(i) {
     var element;
     this.each(function(e, index) {
@@ -98,6 +73,41 @@
     return seq
   }
 
+  /* FilteredSequence */
+
+  function FilteredSequence(parent, filterFn) {
+    var seq = new Sequence()
+    seq.getIterator = () => {
+      var iterator = parent.getIterator()
+      var index = 0
+      var value
+      return {
+        current() { return value },
+        moveNext() {
+          var _val
+          while (iterator.moveNext()) {
+            _val = iterator.current()
+            if (filterFn(_val, index++)) {
+              value = _val
+              return true
+            }
+          }
+          value = undefined
+          return false
+        }
+      }
+    }
+    seq.each = fn => {
+      var j = 0;
+      return parent.each((e, i) => {
+        if (filterFn(e, i)) {
+          return fn(e, j++);
+        }
+      })
+    }
+    return seq
+  }
+
   /* TakeSequence */
 
   function TakeSequence(parent, count) {
@@ -148,45 +158,10 @@
     return seq
   }
 
-  /* FilteredSequence */
-
-  function FilteredSequence(parent, filterFn) {
-    var seq = new Sequence()
-    seq.getIterator = () => {
-      var iterator = parent.getIterator()
-      var index = 0
-      var value
-      return {
-        current() { return value },
-        moveNext() {
-          var _val
-          while (iterator.moveNext()) {
-            _val = iterator.current()
-            if (filterFn(_val, index++)) {
-              value = _val
-              return true
-            }
-          }
-          value = undefined
-          return false
-        }
-      }
-    }
-    seq.each = fn => {
-      var j = 0;
-      return parent.each((e, i) => {
-        if (filterFn(e, i)) {
-          return fn(e, j++);
-        }
-      })
-    }
-    return seq
-  }
-
   /* IndexedFilteredSequence */
 
   function IndexedFilteredSequence(parent, filterFn) {
-    var seq = new FilteredSequence()
+    var seq = FilteredSequence(parent, filterFn)
     seq.parent = parent
     seq.each = (fn) => {
       var length = parent.length()
@@ -207,11 +182,20 @@
   /* ArrayWrapper */
 
   function ArrayWrapper(source) {
-    var seq = new ArrayLikeSequence()
+    var seq = ArrayLikeSequence()
     seq.source = source
     seq.get = i => source[i]
     seq.length = () => source.length
-    seq.each = fn => forEach(source, fn)
+    seq.each = fn => {
+      var i = -1
+      var len = source.length
+      while (++i < len) {
+        if (fn(source[i], i) === false) {
+          return false
+        }
+      }
+      return true
+    }
     seq.map = mapFn => MappedArrayWrapper(seq, mapFn)
     seq.filter = filterFn => FilteredArrayWrapper(seq, filterFn)
     return seq
@@ -221,18 +205,19 @@
 
   function MappedArrayWrapper(parent, mapFn) {
     var source = parent.source
-    var seq = new ArrayLikeSequence()
+    var length = source.length
+    var seq = ArrayLikeSequence()
     seq.parent = parent
-    seq.get = (i) => (i < 0 || i >= source.length) ? undefined : mapFn(source[i])
-    seq.length = () => source.length
-    seq.each = (fn) => {
+    seq.get = i => (i < 0 || i >= length) ? undefined : mapFn(source[i])
+    seq.length = () => length
+    seq.each = fn => {
       var i = -1;
       while (++i < length) {
         if (fn(mapFn(source[i], i), i) === false) {
-          return false;
+          return false
         }
       }
-      return true;
+      return true
     }
     return seq
   }
@@ -259,7 +244,6 @@
     }
     return seq
   }
-
 
   return Lazy
 })
